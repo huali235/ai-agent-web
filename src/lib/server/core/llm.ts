@@ -1,5 +1,5 @@
 // In llm.ts
-import type { AIMessage } from '../../types'
+import type { AIMessage } from '../../client/types'
 import { openai } from './ai'
 import { zodFunction } from 'openai/src/helpers/zod.js'
 

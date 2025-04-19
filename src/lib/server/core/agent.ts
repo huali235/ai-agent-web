@@ -1,7 +1,7 @@
 import { runLLM } from './llm'
 import { runTool } from '../tools/toolRunner'
-import type { UICallbacks } from '../interfaces/interfaces'
-import type { AIMessage } from '../../types'
+import type { UICallbacks } from '@/lib/server/interfaces/interfaces'
+import type { AIMessage } from '../../client/types'
 
 export const runAgent = async ({
   userMessage,
