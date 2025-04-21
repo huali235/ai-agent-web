@@ -1,18 +1,20 @@
+// src/app/layout.tsx
+import './globals.css'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'AI Assistant',
+  description: 'Your AI agent',
+}
+
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en">
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My App</title>
-      </head>
-      <body>
-        <main>{children}</main>
-      </body>
+      <body className="bg-white text-gray-900 min-h-screen">{children}</body>
     </html>
   )
 }
