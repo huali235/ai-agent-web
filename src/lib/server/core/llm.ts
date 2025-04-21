@@ -1,19 +1,25 @@
-// In llm.ts
 import type { AIMessage } from '../../client/types'
 import { openai } from './ai'
-import { zodFunction } from 'openai/src/helpers/zod.js'
+import { zodFunction } from '../interfaces/zodFunction' // update path as needed
 
 export const runLLM = async ({
   messages,
   tools,
 }: {
   messages: AIMessage[]
-  tools: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
+  tools: {
+    name: string
+    description: string
+    parameters: any // should be a Zod object
+  }[]
 }) => {
-  // Make sure to filter out any "orphaned" tool messages
-  // (tool messages without a preceding assistant message with tool_calls)
+  const formattedTools = tools.map((tool) =>
+    zodFunction(tool.parameters, {
+      name: tool.name,
+      description: tool.description,
+    })
+  )
 
-  const formattedTools = tools.map(zodFunction)
   const response = await openai.chat.completions.create({
     model: 'gpt-4.1-mini',
     temperature: 0.1,
