@@ -1,5 +1,5 @@
 // src/interfaces/interfaces.ts - New file for shared interface definitions
-import type { AIMessage } from '../../types'
+import type { AIMessage } from '../../client/types'
 
 // Interface for a loader that can be updated
 export interface LoaderInterface {
