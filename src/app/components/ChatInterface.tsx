@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, FormEvent, useRef, useEffect } from 'react'
+import { v4 as uuid } from 'uuid'
 
 // Message types for UI
 type MessageRole = 'user' | 'assistant' | 'tool'
@@ -28,31 +29,47 @@ export default function ChatInterface() {
     const userMessage = input.trim()
     setInput('')
 
+    console.log('input before creating message:', userMessage)
     // Add user message to the chat UI
     const userDisplayMessage: DisplayMessage = {
       role: 'user',
       content: userMessage,
-      id: `user-${Date.now().toString()}`,
+      id: uuid(),
     }
+    console.log('user message:', userDisplayMessage)
 
-    setMessages((prev) => [...prev, userDisplayMessage])
+    setMessages((prev) => {
+      const updatedMessages = [...prev, userDisplayMessage]
+      console.log('updated message:', updatedMessages)
+      sendMessageToApi(updatedMessages)
+      return updatedMessages
+    })
     setLoading(true)
 
-    try {
-      const response = await fetch('/api/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [userMessage] }),
-      })
+    async function sendMessageToApi(updatedMessages: DisplayMessage[]) {
+      try {
+        console.log('Sending messages to API:', updatedMessages)
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: updatedMessages }),
+        })
 
-      if (!response.ok) throw new Error('Failed to send message')
+        if (!response.ok) throw new Error('Failed to send message')
 
-      const data = await response.json()
-      setMessages(data.messages)
-    } catch (error) {
-      console.error('Error sending message:', error)
-    } finally {
-      setLoading(false)
+        const data = await response.json()
+        console.log('Response from API:', data)
+
+        if (data.messages && Array.isArray(data.messages)) {
+          setMessages(data.messages)
+        } else {
+          console.error('Unexpected response format:', data)
+        }
+      } catch (error) {
+        console.error('Error sending message:', error)
+      } finally {
+        setLoading(false)
+      }
     }
   }
   return (
@@ -63,27 +80,25 @@ export default function ChatInterface() {
             Send a message to start a conversation
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`p-4 rounded-lg ${
-                message.role === 'user'
-                  ? 'bg-blue-100 ml-12'
-                  : message.role === 'tool'
-                  ? 'bg-gray-100 mr-12 font-mono text-sm'
-                  : 'bg-green-100 mr-12'
-              }`}
-            >
-              <p className="text-xs font-semibold mb-1">
-                {message.role === 'user'
-                  ? 'You'
-                  : message.role === 'tool'
-                  ? 'Tool Response'
-                  : 'Assistant'}
-              </p>
-              <div className="whitespace-pre-wrap">{message.content}</div>
-            </div>
-          ))
+          messages
+            .filter(
+              (message) => message.role !== 'tool' && message.content !== 'null'
+            )
+            .map((message) => (
+              <div
+                key={message.id}
+                className={`p-4 rounded-lg ${
+                  message.role === 'user'
+                    ? 'bg-blue-100 ml-12'
+                    : 'bg-green-100 mr-12'
+                }`}
+              >
+                <p className="text-xs font-semibold mb-1">
+                  {message.role === 'user' ? 'You' : 'Assistant'}
+                </p>
+                <div className="whitespace-pre-wrap">{message.content}</div>
+              </div>
+            ))
         )}
         {loading && (
           <div className="bg-gray-100 p-4 rounded-lg mr-12 animate-pulse">
