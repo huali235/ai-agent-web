@@ -1,9 +1,9 @@
 'use client'
 
+import { ArrowUp } from 'lucide-react'
 import { useState, FormEvent, useRef, useEffect } from 'react'
 import { v4 as uuid } from 'uuid'
 
-// Message types for UI
 type MessageRole = 'user' | 'assistant' | 'tool'
 
 interface DisplayMessage {
@@ -12,7 +12,11 @@ interface DisplayMessage {
   id: string
 }
 
-export default function ChatInterface() {
+interface ChatInterfaceProps {
+  setHasSubmitted: (value: boolean) => void
+}
+
+export default function ChatInterface({ setHasSubmitted }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,21 +30,19 @@ export default function ChatInterface() {
     e.preventDefault()
     if (!input.trim() || loading) return
 
+    setHasSubmitted(true) // 👈 Hides greeting/suggestions on first submit
+
     const userMessage = input.trim()
     setInput('')
 
-    console.log('input before creating message:', userMessage)
-    // Add user message to the chat UI
     const userDisplayMessage: DisplayMessage = {
       role: 'user',
       content: userMessage,
       id: uuid(),
     }
-    console.log('user message:', userDisplayMessage)
 
     setMessages((prev) => {
       const updatedMessages = [...prev, userDisplayMessage]
-      console.log('updated message:', updatedMessages)
       sendMessageToApi(updatedMessages)
       return updatedMessages
     })
@@ -48,7 +50,6 @@ export default function ChatInterface() {
 
     async function sendMessageToApi(updatedMessages: DisplayMessage[]) {
       try {
-        console.log('Sending messages to API:', updatedMessages)
         const response = await fetch('/api/agent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -58,7 +59,6 @@ export default function ChatInterface() {
         if (!response.ok) throw new Error('Failed to send message')
 
         const data = await response.json()
-        console.log('Response from API:', data)
 
         if (data.messages && Array.isArray(data.messages)) {
           setMessages(data.messages)
@@ -72,34 +72,26 @@ export default function ChatInterface() {
       }
     }
   }
+
   return (
-    <div className="flex flex-col h-screen max-w-3xl mx-auto p-4">
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-500 my-8">
-            Send a message to start a conversation
+    <div className="w-full max-w-3xl flex flex-col flex-1 justify-end mt-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto mb-4 space-y-4 max-h-[60vh]">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`p-4 rounded-lg ${
+              message.role === 'user'
+                ? 'bg-blue-100 ml-12'
+                : 'bg-green-100 mr-12'
+            }`}
+          >
+            <p className="text-xs font-semibold mb-1">
+              {message.role === 'user' ? 'You' : 'Assistant'}
+            </p>
+            <div className="whitespace-pre-wrap">{message.content}</div>
           </div>
-        ) : (
-          messages
-            .filter(
-              (message) => message.role !== 'tool' && message.content !== 'null'
-            )
-            .map((message) => (
-              <div
-                key={message.id}
-                className={`p-4 rounded-lg ${
-                  message.role === 'user'
-                    ? 'bg-blue-100 ml-12'
-                    : 'bg-green-100 mr-12'
-                }`}
-              >
-                <p className="text-xs font-semibold mb-1">
-                  {message.role === 'user' ? 'You' : 'Assistant'}
-                </p>
-                <div className="whitespace-pre-wrap">{message.content}</div>
-              </div>
-            ))
-        )}
+        ))}
         {loading && (
           <div className="bg-gray-100 p-4 rounded-lg mr-12 animate-pulse">
             <p className="text-xs font-semibold mb-1">Assistant</p>
@@ -109,25 +101,55 @@ export default function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex">
+      {/* Input */}
+
+      <form
+        onSubmit={handleSubmit}
+        className="relative w-full max-w-xl mb-20 ml-20"
+      >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+          placeholder="Ask something..."
+          className="w-full py-3 px-4 pr-12 rounded-full border border-gray-300 focus:outline-none  bg-white/70 backdrop-blur-md text-gray-800"
           disabled={loading}
         />
         <button
           type="submit"
-          className={`p-2 bg-blue-500 text-white rounded-r-lg ${
-            loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
+          className={`absolute top-1/2 right-3 -translate-y-1/2 bg-black  text-white p-2 rounded-full shadow-md transition ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+          <ArrowUp className="w-4 h-4" />
+        </button>
+      </form>
+      {/*}
+      <form
+        onSubmit={handleSubmit}
+        className="relative w-full max-w-xl mt-4 mb-20"
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask something..."
+          className="w-full p-3 pr-12 rounded-full border border-gray-300 focus:outline-none  bg-white/70 backdrop-blur-md text-gray-800 mb-20"
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-white bg-black p-2 rounded-full shadow transition ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
           disabled={loading}
         >
-          Send
+          <ArrowUp className="w-4 h-4" />
         </button>
       </form>
+      */}
     </div>
   )
 }
