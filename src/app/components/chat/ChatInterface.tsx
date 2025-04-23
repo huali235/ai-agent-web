@@ -3,6 +3,7 @@
 import { ArrowUp } from 'lucide-react'
 import { useState, FormEvent, useRef, useEffect } from 'react'
 import { v4 as uuid } from 'uuid'
+import MessageBubble from './MessageBubble'
 
 type MessageRole = 'user' | 'assistant' | 'tool'
 
@@ -77,21 +78,32 @@ export default function ChatInterface({ setHasSubmitted }: ChatInterfaceProps) {
     <div className="w-full max-w-3xl flex flex-col flex-1 justify-end mt-4">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto mb-4 space-y-4 max-h-[60vh]">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`p-4 rounded-lg ${
-              message.role === 'user'
-                ? 'bg-blue-100 ml-12'
-                : 'bg-green-100 mr-12'
-            }`}
-          >
-            <p className="text-xs font-semibold mb-1">
-              {message.role === 'user' ? 'You' : 'Assistant'}
-            </p>
-            <div className="whitespace-pre-wrap">{message.content}</div>
-          </div>
-        ))}
+        {messages.map((message) => {
+          // Skip empty messages or generic tool messages
+          if (
+            message.content === 'null' ||
+            (message.role === 'tool' &&
+              (!message.content || typeof message.content === 'string'))
+          ) {
+            return null
+          }
+
+          // Handle tool responses by converting them to assistant messages
+          if (message.role === 'tool') {
+            const toolResponseMessage: DisplayMessage = {
+              id: message.id,
+              role: 'assistant',
+              content: message.content,
+            }
+            return (
+              <MessageBubble key={message.id} message={toolResponseMessage} />
+            )
+          }
+
+          // Render normal messages
+          return <MessageBubble key={message.id} message={message} />
+        })}
+
         {loading && (
           <div className="bg-gray-100 p-4 rounded-lg mr-12 animate-pulse">
             <p className="text-xs font-semibold mb-1">Assistant</p>
@@ -126,30 +138,6 @@ export default function ChatInterface({ setHasSubmitted }: ChatInterfaceProps) {
           <ArrowUp className="w-4 h-4" />
         </button>
       </form>
-      {/*}
-      <form
-        onSubmit={handleSubmit}
-        className="relative w-full max-w-xl mt-4 mb-20"
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask something..."
-          className="w-full p-3 pr-12 rounded-full border border-gray-300 focus:outline-none  bg-white/70 backdrop-blur-md text-gray-800 mb-20"
-          disabled={loading}
-        />
-        <button
-          type="submit"
-          className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-white bg-black p-2 rounded-full shadow transition ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          disabled={loading}
-        >
-          <ArrowUp className="w-4 h-4" />
-        </button>
-      </form>
-      */}
     </div>
   )
 }
