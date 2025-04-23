@@ -48,3 +48,13 @@ export const calendarTool = {
       ),
   }),
 }
+
+export const readwiseTool = {
+  name: 'get_readwise_highlights',
+  description: `
+    Fetch the user's current Readwise daily review. Use this tool when a user asks for their highlights, daily review, 
+    or recent saved content from Readwise. Present the results in a readable format that shows the highlighted text, 
+    source information, and any notes.
+  `,
+  parameters: z.object({}), // No parameters needed as the API only returns the current daily review
+}
